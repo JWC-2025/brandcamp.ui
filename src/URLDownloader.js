@@ -139,7 +139,7 @@ const URLDownloader = () => {
   };
 
   const pollAuditStatus = async (id, pollCount = 0) => {
-    const maxPolls = 150; // 5 minutes with 2-second intervals
+    const maxPolls = 10; // 5 minutes with 30-second intervals
     
     if (pollCount >= maxPolls) {
       setError('Audit processing timed out. Please try again.');
@@ -157,6 +157,15 @@ const URLDownloader = () => {
       const statusData = await response.json();
       setAuditStatus(statusData.status);
       
+      // Update the audit status in the table
+      setAudits(prevAudits => 
+        prevAudits.map(audit => 
+          audit.auditId === id 
+            ? { ...audit, status: statusData.status }
+            : audit
+        )
+      );
+      
       // Set loading to false once we start getting status updates
       if (pollCount === 0) {
         setLoading(false);
@@ -173,16 +182,24 @@ const URLDownloader = () => {
         setLoading(false);
         setAuditId(null);
         setAuditStatus(null);
-        fetchAudits();
+        
+        // Update the audit with download URL
+        setAudits(prevAudits => 
+          prevAudits.map(audit => 
+            audit.auditId === id 
+              ? { ...audit, status: 'completed', downloadUrl: auditResult.downloadUrl }
+              : audit
+          )
+        );
       } else if (statusData.status === 'failed') {
         setError('Audit processing failed');
         setAuditId(null);
         setAuditStatus(null);
       } else if (['starting', 'pending', 'processing'].includes(statusData.status)) {
-        setTimeout(() => pollAuditStatus(id, pollCount + 1), 2000);
+        setTimeout(() => pollAuditStatus(id, pollCount + 1), 30000);
       } else {
         console.warn(`Unknown audit status: ${statusData.status}`);
-        setTimeout(() => pollAuditStatus(id, pollCount + 1), 2000);
+        setTimeout(() => pollAuditStatus(id, pollCount + 1), 30000);
       }
     } catch (err) {
       setError(err.message || 'Failed to check audit status');
@@ -238,7 +255,17 @@ const URLDownloader = () => {
           setAuditStatus('processing');
           setSuccess('Audit started successfully! Processing...');
           setLoading(false);
-          fetchAudits();
+          
+          // Add new audit to table immediately
+          const newAudit = {
+            auditId: result.auditId,
+            url: url,
+            status: 'starting',
+            createdAt: new Date().toISOString(),
+            downloadUrl: null
+          };
+          setAudits(prevAudits => [newAudit, ...prevAudits]);
+          
           pollAuditStatus(result.auditId);
         } else {
           throw new Error('No audit ID received from server');
