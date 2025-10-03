@@ -139,7 +139,7 @@ const URLDownloader = () => {
   };
 
   const pollAuditStatus = async (id, pollCount = 0) => {
-    const maxPolls = 10; // 5 minutes with 30-second intervals
+    const maxPolls = 15; //30-second intervals
     
     if (pollCount >= maxPolls) {
       setError('Audit processing is taking longer than expected. Please check back later.');
@@ -266,6 +266,9 @@ const URLDownloader = () => {
           };
           setAudits(prevAudits => [newAudit, ...prevAudits]);
           
+          // Clear the input field after successful submission
+          setUrl('');
+          
           pollAuditStatus(result.auditId);
         } else {
           throw new Error('No audit ID received from server');
@@ -279,6 +282,10 @@ const URLDownloader = () => {
         setAuditStatus(null);
         setAuditData(null);
         setLoading(false);
+        
+        // Clear the input field after successful submission
+        setUrl('');
+        
         fetchAudits();
       }
     } catch (err) {
