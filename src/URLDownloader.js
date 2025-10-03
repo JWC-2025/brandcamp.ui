@@ -142,7 +142,7 @@ const URLDownloader = () => {
     const maxPolls = 10; // 5 minutes with 30-second intervals
     
     if (pollCount >= maxPolls) {
-      setError('Audit processing timed out. Please try again.');
+      setError('Audit processing is taking longer than expected. Please check back later.');
       setAuditId(null);
       setAuditStatus(null);
       setLoading(false);
