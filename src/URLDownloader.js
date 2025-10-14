@@ -51,6 +51,9 @@ const URLDownloader = () => {
         } else if (sortConfig.key === 'createdAt') {
           aValue = new Date(aValue || 0);
           bValue = new Date(bValue || 0);
+        } else if (sortConfig.key === 'score') {
+          aValue = parseFloat(aValue) || 0;
+          bValue = parseFloat(bValue) || 0;
         }
         
         if (aValue < bValue) {
@@ -183,11 +186,11 @@ const URLDownloader = () => {
         setAuditId(null);
         setAuditStatus(null);
         
-        // Update the audit with download URL
+        // Update the audit with download URL and score
         setAudits(prevAudits => 
           prevAudits.map(audit => 
             audit.auditId === id 
-              ? { ...audit, status: 'completed', downloadUrl: auditResult.downloadUrl }
+              ? { ...audit, status: 'completed', downloadUrl: auditResult.downloadUrl, score: auditResult.score }
               : audit
           )
         );
@@ -262,7 +265,8 @@ const URLDownloader = () => {
             url: url,
             status: 'starting',
             createdAt: new Date().toISOString(),
-            downloadUrl: null
+            downloadUrl: null,
+            score: null
           };
           setAudits(prevAudits => [newAudit, ...prevAudits]);
           
@@ -444,6 +448,15 @@ const URLDownloader = () => {
                             {getSortIcon('status')}
                           </div>
                         </th>
+                        <th 
+                          className="px-4 py-3 text-left text-white font-semibold cursor-pointer hover:bg-slate-600/30 transition-colors"
+                          onClick={() => handleSort('score')}
+                        >
+                          <div className="flex items-center">
+                            Overall Score
+                            {getSortIcon('score')}
+                          </div>
+                        </th>
                         <th className="px-4 py-3 text-center text-white font-semibold">
                           Actions
                         </th>
@@ -478,6 +491,13 @@ const URLDownloader = () => {
                             }`}>
                               {audit.status || 'unknown'}
                             </div>
+                          </td>
+                          <td className="px-4 py-3 text-white font-medium">
+                            {audit.score !== null && audit.score !== undefined 
+                              ? parseFloat(audit.score).toFixed(1) 
+                              : audit.status === 'completed' 
+                                ? 'N/A' 
+                                : '-'}
                           </td>
                           <td className="px-4 py-3 text-center">
                             {audit.status === 'completed' && audit.downloadUrl ? (
