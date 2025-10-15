@@ -259,31 +259,14 @@ const URLDownloader = () => {
     setSuccess('');
     
     try {
-      const csvText = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = () => reject(new Error('Failed to read file'));
-        reader.readAsText(csvFile);
-      });
-      
-      const urls = parseCSV(csvText);
-      
-      if (urls.length === 0) {
-        setError('No valid URLs found in the CSV file');
-        setBulkLoading(false);
-        return;
-      }
+      const formData = new FormData();
+      formData.append('file', csvFile);
+      formData.append('includeScreenshot', 'false');
+      formData.append('format', 'csv');
       
       const response = await fetch('https://brand-camp-api.vercel.app/api/audit/bulk', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          urls: urls,
-          includeScreenshot: false,
-          format: "csv"
-        })
+        body: formData
       });
 
       if (!response.ok) {
@@ -295,12 +278,12 @@ const URLDownloader = () => {
       if (result.auditId) {
         setAuditId(result.auditId);
         setAuditStatus('processing');
-        setSuccess(`Bulk audit started for ${urls.length} URLs! Processing...`);
+        setSuccess(`Bulk audit started! Processing...`);
         setBulkLoading(false);
         
         const newAudit = {
           auditId: result.auditId,
-          url: `Bulk audit (${urls.length} URLs)`,
+          url: `Bulk audit (CSV file: ${csvFile.name})`,
           status: 'starting',
           createdAt: new Date().toISOString(),
           downloadUrl: null,
