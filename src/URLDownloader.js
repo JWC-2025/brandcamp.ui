@@ -11,6 +11,9 @@ const URLDownloader = () => {
   const [audits, setAudits] = useState([]);
   const [auditsLoading, setAuditsLoading] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [bulkMode, setBulkMode] = useState(false);
+  const [csvFile, setCsvFile] = useState(null);
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   const isValidUrl = (string) => {
     try {
@@ -28,6 +31,39 @@ const URLDownloader = () => {
     } catch (_) {
       return url || 'Unknown';
     }
+  };
+
+  const parseCSV = (csvText) => {
+    const lines = csvText.split('\n').filter(line => line.trim());
+    const urls = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      
+      const values = line.split(',').map(val => val.trim().replace(/^["']|["']$/g, ''));
+      
+      for (const value of values) {
+        if (value && isValidUrl(value)) {
+          urls.push(value);
+        }
+      }
+    }
+    
+    return [...new Set(urls)];
+  };
+
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      setError('Please upload a CSV file');
+      return;
+    }
+    
+    setCsvFile(file);
+    setError('');
   };
 
   const handleSort = (key) => {
@@ -212,6 +248,79 @@ const URLDownloader = () => {
     }
   };
 
+  const handleBulkSubmit = async () => {
+    if (!csvFile) {
+      setError('Please upload a CSV file');
+      return;
+    }
+    
+    setBulkLoading(true);
+    setError('');
+    setSuccess('');
+    
+    try {
+      const csvText = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsText(csvFile);
+      });
+      
+      const urls = parseCSV(csvText);
+      
+      if (urls.length === 0) {
+        setError('No valid URLs found in the CSV file');
+        setBulkLoading(false);
+        return;
+      }
+      
+      const response = await fetch('https://brand-camp-api.vercel.app/api/audit/bulk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          urls: urls,
+          includeScreenshot: false,
+          format: "csv"
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.auditId) {
+        setAuditId(result.auditId);
+        setAuditStatus('processing');
+        setSuccess(`Bulk audit started for ${urls.length} URLs! Processing...`);
+        setBulkLoading(false);
+        
+        const newAudit = {
+          auditId: result.auditId,
+          url: `Bulk audit (${urls.length} URLs)`,
+          status: 'starting',
+          createdAt: new Date().toISOString(),
+          downloadUrl: null,
+          score: null
+        };
+        setAudits(prevAudits => [newAudit, ...prevAudits]);
+        
+        setCsvFile(null);
+        
+        pollAuditStatus(result.auditId);
+      } else {
+        throw new Error('No audit ID received from server');
+      }
+      
+    } catch (err) {
+      setError(err.message || 'Failed to process bulk audit request');
+      setBulkLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -219,6 +328,11 @@ const URLDownloader = () => {
     setAuditId(null);
     setAuditStatus(null);
     setAuditData(null);
+    
+    if (bulkMode) {
+      handleBulkSubmit();
+      return;
+    }
     
     if (!url.trim()) {
       setError('Please enter a URL');
@@ -312,27 +426,86 @@ const URLDownloader = () => {
               SalesOS
             </h1>
             <p className="text-lg text-slate-300 max-w-lg mx-auto leading-relaxed">
-              Extract actionable insights from any website. Enter a URL and get structured data delivered as a CSV file.
+              Extract actionable insights from any website. Enter a URL or upload a CSV file of URLs and get structured data delivered as a CSV file.
             </p>
           </div>
           
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.102m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                </svg>
-              </div>
-              <input
-                type="url"
-                id="url"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://example.com"
-                className="w-full pl-12 pr-4 py-4 bg-slate-800/50 border border-slate-600/50 rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-200 text-lg backdrop-blur-sm"
-                disabled={loading}
-              />
+          <div className="flex justify-center mb-8">
+            <div className="bg-slate-800/50 border border-slate-600/50 rounded-2xl p-1 backdrop-blur-sm">
+              <button
+                onClick={() => setBulkMode(false)}
+                className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                  !bulkMode 
+                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg' 
+                    : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                Single URL
+              </button>
+              <button
+                onClick={() => setBulkMode(true)}
+                className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                  bulkMode 
+                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg' 
+                    : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                Bulk Upload
+              </button>
             </div>
+          </div>
+          
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {!bulkMode ? (
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.102m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                </div>
+                <input
+                  type="url"
+                  id="url"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="https://example.com"
+                  className="w-full pl-12 pr-4 py-4 bg-slate-800/50 border border-slate-600/50 rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-200 text-lg backdrop-blur-sm"
+                  disabled={loading}
+                />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg className="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <input
+                    type="file"
+                    id="csvFile"
+                    accept=".csv"
+                    onChange={handleFileUpload}
+                    className="w-full pl-12 pr-4 py-4 bg-slate-800/50 border border-slate-600/50 rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-200 text-lg backdrop-blur-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-purple-600 file:text-white hover:file:bg-purple-700"
+                    disabled={bulkLoading}
+                  />
+                </div>
+                {csvFile && (
+                  <div className="flex items-center space-x-3 text-green-400 bg-green-500/10 border border-green-500/20 rounded-xl p-4 backdrop-blur-sm">
+                    <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-sm font-medium">File uploaded: {csvFile.name}</span>
+                  </div>
+                )}
+                <div className="text-sm text-slate-400 bg-slate-800/30 border border-slate-600/30 rounded-xl p-4 backdrop-blur-sm">
+                  <p className="mb-2"><strong>CSV Format:</strong></p>
+                  <p>• Upload a CSV file containing website URLs</p>
+                  <p>• URLs can be in any column, one per cell</p>
+                  <p>• Example: https://example.com, https://google.com</p>
+                </div>
+              </div>
+            )}
             
             {error && (
               <div className="flex items-center space-x-3 text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl p-4 backdrop-blur-sm">
@@ -373,21 +546,21 @@ const URLDownloader = () => {
             
             <button
               type="submit"
-              disabled={loading || !url.trim()}
+              disabled={bulkMode ? (bulkLoading || !csvFile) : (loading || !url.trim())}
               className="w-full relative overflow-hidden bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-slate-700 disabled:to-slate-600 text-white font-semibold py-4 px-8 rounded-2xl transition-all duration-300 transform hover:scale-[1.02] disabled:scale-100 disabled:cursor-not-allowed shadow-lg hover:shadow-purple-500/25 disabled:shadow-none group text-lg"
             >
-              <div className={`flex items-center justify-center space-x-3 ${loading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-200`}>
+              <div className={`flex items-center justify-center space-x-3 ${(loading || bulkLoading) ? 'opacity-0' : 'opacity-100'} transition-opacity duration-200`}>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <span>Extract Data</span>
+                <span>{bulkMode ? 'Process Bulk Audit' : 'Extract Data'}</span>
               </div>
               
-              {loading && (
+              {(loading || bulkLoading) && (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="flex items-center space-x-3">
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    <span className="text-lg font-semibold">Starting audit...</span>
+                    <span className="text-lg font-semibold">{bulkMode ? 'Processing bulk audit...' : 'Starting audit...'}</span>
                   </div>
                 </div>
               )}
