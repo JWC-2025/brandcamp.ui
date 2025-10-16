@@ -295,7 +295,10 @@ const URLDownloader = () => {
         
         pollAuditStatus(result.auditId);
       } else {
-        throw new Error('No audit ID received from server');
+        setSuccess('CSV uploaded successfully!');
+        setBulkLoading(false);
+        setCsvFile(null);
+        fetchAudits();
       }
       
     } catch (err) {
@@ -649,11 +652,7 @@ const URLDownloader = () => {
                             </div>
                           </td>
                           <td className="px-4 py-3 text-white font-medium">
-                            {audit.score !== null && audit.score !== undefined 
-                              ? parseFloat(audit.score).toFixed(1) 
-                              : audit.status === 'completed' 
-                                ? 'N/A' 
-                                : '-'}
+                            {audit.score || ' N/A' }
                           </td>
                           <td className="px-4 py-3 text-center">
                             {audit.status === 'completed' && audit.downloadUrl ? (
