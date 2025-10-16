@@ -501,34 +501,6 @@ const URLDownloader = () => {
                 <span className="text-sm font-medium">{error}</span>
               </div>
             )}
-
-            {success && (
-              <div className="fixed top-4 right-4 z-50 flex items-center space-x-3 text-green-400 bg-green-500/20 border border-green-500/30 rounded-xl p-4 backdrop-blur-sm shadow-lg animate-in slide-in-from-right-full duration-300">
-                <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                </svg>
-                <span className="text-sm font-medium">{success}</span>
-              </div>
-            )}
-            
-            {auditData && (
-              <button
-                onClick={() => {
-                  downloadFromBlobUrl(auditData.downloadUrl, auditData.fileName);
-                  setAuditData(null);
-                  setSuccess('');
-                }}
-                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-4 px-8 rounded-2xl transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-green-500/25 group text-lg"
-              >
-                <div className="flex items-center justify-center space-x-3">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <span>Download CSV File</span>
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-              </button>
-            )}
             
             <button
               type="submit"
