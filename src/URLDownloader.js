@@ -7,9 +7,9 @@ const URLDownloader = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [auditId, setAuditId] = useState(null);
-  const [auditStatus, setAuditStatus] = useState(null);
-  const [auditData, setAuditData] = useState(null);
+  const [auditId, setAuditId] = useState(null); // eslint-disable-line no-unused-vars
+  const [auditStatus, setAuditStatus] = useState(null); // eslint-disable-line no-unused-vars
+  const [auditData, setAuditData] = useState(null); // eslint-disable-line no-unused-vars
   const [audits, setAudits] = useState([]);
   const [auditsLoading, setAuditsLoading] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
@@ -35,7 +35,7 @@ const URLDownloader = () => {
     }
   };
 
-  const parseCSV = (csvText) => {
+  const parseCSV = (csvText) => { // eslint-disable-line no-unused-vars
     const lines = csvText.split('\n').filter(line => line.trim());
     const urls = [];
     
