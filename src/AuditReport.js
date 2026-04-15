@@ -30,26 +30,21 @@ const CATEGORIES = [
 const styles = StyleSheet.create({
   page: {
     backgroundColor: COLORS.dark,
-    padding: 48,
+    paddingTop: 48,
+    paddingBottom: 64,
+    paddingHorizontal: 48,
     fontFamily: 'Helvetica',
   },
-  // Cover page
   coverPage: {
     backgroundColor: COLORS.dark,
-    padding: 48,
+    paddingTop: 48,
+    paddingBottom: 48,
+    paddingHorizontal: 48,
     fontFamily: 'Helvetica',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-  },
-  coverHeader: {
-    marginBottom: 48,
   },
   brandLabel: {
     fontSize: 11,
     color: COLORS.muted,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
     marginBottom: 8,
   },
   appTitle: {
@@ -61,48 +56,42 @@ const styles = StyleSheet.create({
   reportSubtitle: {
     fontSize: 13,
     color: COLORS.muted,
-  },
-  coverBody: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingVertical: 48,
+    marginBottom: 48,
   },
   websiteLabel: {
     fontSize: 11,
     color: COLORS.muted,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
     marginBottom: 12,
   },
   websiteName: {
-    fontSize: 36,
+    fontSize: 32,
     fontFamily: 'Helvetica-Bold',
     color: COLORS.white,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   websiteUrl: {
-    fontSize: 13,
+    fontSize: 12,
     color: COLORS.muted,
-    marginBottom: 40,
+    marginBottom: 36,
   },
   divider: {
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
-    marginBottom: 40,
+    marginBottom: 36,
   },
   overallScoreRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 36,
   },
   overallScoreBox: {
     width: 72,
     height: 72,
-    borderRadius: 8,
     backgroundColor: COLORS.purple,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 20,
+    borderRadius: 8,
   },
   overallScoreNumber: {
     fontSize: 28,
@@ -112,21 +101,28 @@ const styles = StyleSheet.create({
   overallScoreLabel: {
     fontSize: 11,
     color: COLORS.muted,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
     marginBottom: 4,
   },
   overallScoreSubtext: {
     fontSize: 13,
     color: COLORS.white,
   },
-  categoryGrid: {
+  // Category tiles — two per row using margins instead of gap
+  categoryRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
+    marginBottom: 12,
   },
-  categoryTile: {
-    width: '47%',
+  categoryTileLeft: {
+    width: '48%',
+    backgroundColor: COLORS.surface,
+    borderRadius: 8,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginRight: '4%',
+  },
+  categoryTileRight: {
+    width: '48%',
     backgroundColor: COLORS.surface,
     borderRadius: 8,
     padding: 16,
@@ -146,7 +142,6 @@ const styles = StyleSheet.create({
   categoryTileScore: {
     fontSize: 20,
     fontFamily: 'Helvetica-Bold',
-    color: COLORS.white,
     marginRight: 10,
   },
   barTrack: {
@@ -160,11 +155,15 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   coverFooter: {
+    position: 'absolute',
+    bottom: 48,
+    left: 48,
+    right: 48,
     flexDirection: 'row',
     justifyContent: 'space-between',
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
-    paddingTop: 20,
+    paddingTop: 16,
   },
   footerText: {
     fontSize: 10,
@@ -180,12 +179,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
-  pageHeaderLeft: {},
   categoryTag: {
     fontSize: 10,
     color: COLORS.purple,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
     marginBottom: 4,
   },
   categoryTitle: {
@@ -205,13 +201,10 @@ const styles = StyleSheet.create({
   scoreChipNumber: {
     fontSize: 22,
     fontFamily: 'Helvetica-Bold',
-    color: COLORS.white,
   },
   scoreChipLabel: {
     fontSize: 9,
     color: COLORS.muted,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
   },
   section: {
     marginBottom: 28,
@@ -228,11 +221,9 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: 'Helvetica-Bold',
     color: COLORS.white,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
   },
   bullet: {
     flexDirection: 'row',
@@ -243,12 +234,10 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: COLORS.muted,
     marginRight: 10,
-    marginTop: 1,
   },
   bulletText: {
     fontSize: 11,
     color: '#CBD5E1',
-    lineHeight: 1.6,
     flex: 1,
   },
   pageNumber: {
@@ -268,32 +257,37 @@ const getScoreColor = (score) => {
 
 const ScoreBar = ({ score }) => (
   <View style={styles.barTrack}>
-    <View
-      style={[
-        styles.barFill,
-        { width: `${score}%`, backgroundColor: getScoreColor(score) },
-      ]}
-    />
+    <View style={[styles.barFill, { width: `${score}%`, backgroundColor: getScoreColor(score) }]} />
+  </View>
+);
+
+const CategoryTile = ({ label, score, tileStyle }) => (
+  <View style={tileStyle}>
+    <Text style={styles.categoryTileLabel}>{label}</Text>
+    <View style={styles.categoryTileScoreRow}>
+      <Text style={[styles.categoryTileScore, { color: getScoreColor(score) }]}>{score}</Text>
+      <ScoreBar score={score} />
+    </View>
   </View>
 );
 
 const CategoryPage = ({ label, score, insights, recommendations, pageNum, totalPages }) => (
   <Page size="A4" style={styles.page}>
     <View style={styles.pageHeader}>
-      <View style={styles.pageHeaderLeft}>
-        <Text style={styles.categoryTag}>Category Analysis</Text>
+      <View>
+        <Text style={styles.categoryTag}>CATEGORY ANALYSIS</Text>
         <Text style={styles.categoryTitle}>{label}</Text>
       </View>
       <View style={styles.scoreChip}>
         <Text style={[styles.scoreChipNumber, { color: getScoreColor(score) }]}>{score}</Text>
-        <Text style={styles.scoreChipLabel}>Score</Text>
+        <Text style={styles.scoreChipLabel}>SCORE</Text>
       </View>
     </View>
 
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <View style={[styles.sectionDot, { backgroundColor: COLORS.blue }]} />
-        <Text style={styles.sectionTitle}>Insights</Text>
+        <Text style={styles.sectionTitle}>INSIGHTS</Text>
       </View>
       {insights.map((insight, i) => (
         <View key={i} style={styles.bullet}>
@@ -306,7 +300,7 @@ const CategoryPage = ({ label, score, insights, recommendations, pageNum, totalP
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <View style={[styles.sectionDot, { backgroundColor: COLORS.purple }]} />
-        <Text style={styles.sectionTitle}>Recommendations</Text>
+        <Text style={styles.sectionTitle}>RECOMMENDATIONS</Text>
       </View>
       {recommendations.map((rec, i) => (
         <View key={i} style={styles.bullet}>
@@ -322,56 +316,57 @@ const CategoryPage = ({ label, score, insights, recommendations, pageNum, totalP
 
 const AuditReport = ({ data }) => {
   const { url, overallScore, scores, insights, recommendations, timestamp } = data;
+
   const domain = (() => {
     try { return new URL(url).hostname.replace('www.', ''); } catch { return url; }
   })();
+
   const date = new Date(timestamp).toLocaleDateString('en-GB', {
     day: 'numeric', month: 'long', year: 'numeric',
   });
+
   const totalPages = 1 + CATEGORIES.length;
+
+  const topRow = CATEGORIES.slice(0, 2);
+  const bottomRow = CATEGORIES.slice(2, 4);
+
+  const scoreLabel = overallScore >= 70
+    ? 'Strong brand presence'
+    : overallScore >= 40
+    ? 'Room for improvement'
+    : 'Needs significant work';
 
   return (
     <Document title={`Brand Audit – ${domain}`} author="BrandCamp">
       {/* Cover page */}
       <Page size="A4" style={styles.coverPage}>
-        <View style={styles.coverHeader}>
-          <Text style={styles.brandLabel}>BrandCamp</Text>
-          <Text style={styles.appTitle}>Brand Audit Report</Text>
-          <Text style={styles.reportSubtitle}>Website analysis & recommendations</Text>
+        <Text style={styles.brandLabel}>BRANDCAMP</Text>
+        <Text style={styles.appTitle}>Brand Audit Report</Text>
+        <Text style={styles.reportSubtitle}>Website analysis & recommendations</Text>
+
+        <Text style={styles.websiteLabel}>ANALYSED WEBSITE</Text>
+        <Text style={styles.websiteName}>{domain}</Text>
+        <Text style={styles.websiteUrl}>{url}</Text>
+
+        <View style={styles.divider} />
+
+        <View style={styles.overallScoreRow}>
+          <View style={styles.overallScoreBox}>
+            <Text style={styles.overallScoreNumber}>{overallScore}</Text>
+          </View>
+          <View>
+            <Text style={styles.overallScoreLabel}>OVERALL SCORE</Text>
+            <Text style={styles.overallScoreSubtext}>{scoreLabel}</Text>
+          </View>
         </View>
 
-        <View style={styles.coverBody}>
-          <Text style={styles.websiteLabel}>Analysed website</Text>
-          <Text style={styles.websiteName}>{domain}</Text>
-          <Text style={styles.websiteUrl}>{url}</Text>
-
-          <View style={styles.divider} />
-
-          <View style={styles.overallScoreRow}>
-            <View style={styles.overallScoreBox}>
-              <Text style={styles.overallScoreNumber}>{overallScore}</Text>
-            </View>
-            <View>
-              <Text style={styles.overallScoreLabel}>Overall Score</Text>
-              <Text style={styles.overallScoreSubtext}>
-                {overallScore >= 70 ? 'Strong brand presence' : overallScore >= 40 ? 'Room for improvement' : 'Needs significant work'}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.categoryGrid}>
-            {CATEGORIES.map(({ key, label }) => (
-              <View key={key} style={styles.categoryTile}>
-                <Text style={styles.categoryTileLabel}>{label}</Text>
-                <View style={styles.categoryTileScoreRow}>
-                  <Text style={[styles.categoryTileScore, { color: getScoreColor(scores[key]) }]}>
-                    {scores[key]}
-                  </Text>
-                  <ScoreBar score={scores[key]} />
-                </View>
-              </View>
-            ))}
-          </View>
+        <View style={styles.categoryRow}>
+          <CategoryTile label={topRow[0].label} score={scores[topRow[0].key]} tileStyle={styles.categoryTileLeft} />
+          <CategoryTile label={topRow[1].label} score={scores[topRow[1].key]} tileStyle={styles.categoryTileRight} />
+        </View>
+        <View style={styles.categoryRow}>
+          <CategoryTile label={bottomRow[0].label} score={scores[bottomRow[0].key]} tileStyle={styles.categoryTileLeft} />
+          <CategoryTile label={bottomRow[1].label} score={scores[bottomRow[1].key]} tileStyle={styles.categoryTileRight} />
         </View>
 
         <View style={styles.coverFooter}>
@@ -380,7 +375,6 @@ const AuditReport = ({ data }) => {
         </View>
       </Page>
 
-      {/* One page per category */}
       {CATEGORIES.map(({ key, label }, i) => (
         <CategoryPage
           key={key}
