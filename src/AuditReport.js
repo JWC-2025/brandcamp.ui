@@ -1,328 +1,193 @@
-import React from 'react';
-import {
-  Document,
-  Page,
-  Text,
-  View,
-  StyleSheet,
-} from '@react-pdf/renderer';
+import jsPDF from 'jspdf';
 
-const COLORS = {
-  purple: '#7C3AED',
-  blue: '#2563EB',
-  dark: '#0F172A',
-  surface: '#1E293B',
-  border: '#334155',
-  muted: '#94A3B8',
-  white: '#FFFFFF',
-  green: '#22C55E',
-  amber: '#F59E0B',
-  red: '#EF4444',
+// RGB colour helpers
+const C = {
+  dark:    [15,  23,  42],
+  surface: [30,  41,  59],
+  border:  [51,  65,  85],
+  muted:   [148, 163, 184],
+  light:   [203, 213, 225],
+  white:   [255, 255, 255],
+  purple:  [124, 58,  237],
+  blue:    [37,  99,  235],
+  green:   [34,  197, 94],
+  amber:   [245, 158, 11],
+  red:     [239, 68,  68],
 };
 
 const CATEGORIES = [
-  { key: 'valueProposition', label: 'Value Proposition' },
+  { key: 'valueProposition',   label: 'Value Proposition' },
   { key: 'featuresAndBenefits', label: 'Features & Benefits' },
-  { key: 'ctaAnalysis', label: 'CTA Analysis' },
-  { key: 'trustSignals', label: 'Trust Signals' },
+  { key: 'ctaAnalysis',        label: 'CTA Analysis' },
+  { key: 'trustSignals',       label: 'Trust Signals' },
 ];
 
-const styles = StyleSheet.create({
-  page: {
-    backgroundColor: COLORS.dark,
-    paddingTop: 48,
-    paddingBottom: 64,
-    paddingLeft: 48,
-    paddingRight: 48,
-    fontFamily: 'Helvetica',
-  },
-  coverPage: {
-    backgroundColor: COLORS.dark,
-    paddingTop: 48,
-    paddingBottom: 48,
-    paddingLeft: 48,
-    paddingRight: 48,
-    fontFamily: 'Helvetica',
-  },
-  brandLabel: {
-    fontSize: 11,
-    color: COLORS.muted,
-    marginBottom: 8,
-  },
-  appTitle: {
-    fontSize: 28,
-    fontFamily: 'Helvetica-Bold',
-    color: COLORS.white,
-    marginBottom: 4,
-  },
-  reportSubtitle: {
-    fontSize: 13,
-    color: COLORS.muted,
-    marginBottom: 48,
-  },
-  websiteLabel: {
-    fontSize: 11,
-    color: COLORS.muted,
-    marginBottom: 12,
-  },
-  websiteName: {
-    fontSize: 32,
-    fontFamily: 'Helvetica-Bold',
-    color: COLORS.white,
-    marginBottom: 6,
-  },
-  websiteUrl: {
-    fontSize: 12,
-    color: COLORS.muted,
-    marginBottom: 36,
-  },
-  divider: {
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    marginBottom: 36,
-  },
-  overallScoreRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 36,
-  },
-  overallScoreBox: {
-    width: 72,
-    height: 72,
-    backgroundColor: COLORS.purple,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 20,
-    borderRadius: 8,
-  },
-  overallScoreNumber: {
-    fontSize: 28,
-    fontFamily: 'Helvetica-Bold',
-    color: COLORS.white,
-  },
-  overallScoreLabel: {
-    fontSize: 11,
-    color: COLORS.muted,
-    marginBottom: 4,
-  },
-  overallScoreSubtext: {
-    fontSize: 13,
-    color: COLORS.white,
-  },
-  // Category tiles — two per row using margins instead of gap
-  categoryRow: {
-    flexDirection: 'row',
-    marginBottom: 12,
-  },
-  categoryTileLeft: {
-    width: '48%',
-    backgroundColor: COLORS.surface,
-    borderRadius: 8,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    marginRight: '4%',
-  },
-  categoryTileRight: {
-    width: '48%',
-    backgroundColor: COLORS.surface,
-    borderRadius: 8,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  categoryTileLabel: {
-    fontSize: 10,
-    color: COLORS.muted,
-    marginBottom: 8,
-  },
-  categoryTileScoreRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  categoryTileScore: {
-    fontSize: 20,
-    fontFamily: 'Helvetica-Bold',
-    marginRight: 10,
-  },
-  barTrack: {
-    flex: 1,
-    height: 4,
-    backgroundColor: COLORS.border,
-    borderRadius: 2,
-  },
-  barFill: {
-    height: 4,
-    borderRadius: 2,
-  },
-  coverFooter: {
-    position: 'absolute',
-    bottom: 48,
-    left: 48,
-    right: 48,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    paddingTop: 16,
-  },
-  footerText: {
-    fontSize: 10,
-    color: COLORS.muted,
-  },
-  // Category pages
-  pageHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 32,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  categoryTag: {
-    fontSize: 10,
-    color: COLORS.purple,
-    marginBottom: 4,
-  },
-  categoryTitle: {
-    fontSize: 22,
-    fontFamily: 'Helvetica-Bold',
-    color: COLORS.white,
-  },
-  scoreChip: {
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 8,
-    paddingLeft: 16,
-    paddingRight: 16,
-    paddingTop: 10,
-    paddingBottom: 10,
-    alignItems: 'center',
-  },
-  scoreChipNumber: {
-    fontSize: 22,
-    fontFamily: 'Helvetica-Bold',
-  },
-  scoreChipLabel: {
-    fontSize: 9,
-    color: COLORS.muted,
-  },
-  section: {
-    marginBottom: 28,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  sectionDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 8,
-  },
-  sectionTitle: {
-    fontSize: 11,
-    fontFamily: 'Helvetica-Bold',
-    color: COLORS.white,
-  },
-  bullet: {
-    flexDirection: 'row',
-    marginBottom: 10,
-    paddingLeft: 4,
-  },
-  bulletDash: {
-    fontSize: 11,
-    color: COLORS.muted,
-    marginRight: 10,
-  },
-  bulletText: {
-    fontSize: 11,
-    color: '#CBD5E1',
-    flex: 1,
-  },
-  pageNumber: {
-    position: 'absolute',
-    bottom: 32,
-    right: 48,
-    fontSize: 10,
-    color: COLORS.muted,
-  },
-});
+const W = 210;   // A4 width  (mm)
+const H = 297;   // A4 height (mm)
+const ML = 18;   // margin left/right
+const CW = W - ML * 2; // content width
 
-const getScoreColor = (score) => {
-  const n = Number(score) || 0;
-  if (n >= 70) return COLORS.green;
-  if (n >= 40) return COLORS.amber;
-  return COLORS.red;
+const scoreColor = (n) => {
+  const s = Number(n) || 0;
+  if (s >= 70) return C.green;
+  if (s >= 40) return C.amber;
+  return C.red;
 };
 
-const ScoreBar = ({ score }) => {
-  const n = Math.max(0, Math.min(100, Number(score) || 0));
-  return (
-    <View style={styles.barTrack}>
-      <View style={[styles.barFill, { width: `${n}%`, backgroundColor: getScoreColor(n) }]} />
-    </View>
-  );
+const fill   = (doc, rgb) => doc.setFillColor(...rgb);
+const stroke = (doc, rgb) => doc.setDrawColor(...rgb);
+const text   = (doc, rgb) => doc.setTextColor(...rgb);
+
+const bg = (doc) => { fill(doc, C.dark); doc.rect(0, 0, W, H, 'F'); };
+
+const divider = (doc, y) => {
+  stroke(doc, C.border);
+  doc.setLineWidth(0.25);
+  doc.line(ML, y, W - ML, y);
 };
 
-const CategoryTile = ({ label, score, tileStyle }) => (
-  <View style={tileStyle}>
-    <Text style={styles.categoryTileLabel}>{label}</Text>
-    <View style={styles.categoryTileScoreRow}>
-      <Text style={[styles.categoryTileScore, { color: getScoreColor(score) }]}>{score}</Text>
-      <ScoreBar score={score} />
-    </View>
-  </View>
-);
+// Wrap + clip text to a max height, returns final y
+const bulletList = (doc, items, startY, maxY) => {
+  let y = startY;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  for (const item of items) {
+    if (y >= maxY) break;
+    text(doc, C.muted); doc.text('–', ML + 2, y);
+    text(doc, C.light);
+    const lines = doc.splitTextToSize(item, CW - 8);
+    for (const line of lines) {
+      if (y >= maxY) break;
+      doc.text(line, ML + 7, y);
+      y += 4.2;
+    }
+    y += 1.5;
+  }
+  return y;
+};
 
-const CategoryPage = ({ label, score, insights, recommendations, pageNum, totalPages }) => (
-  <Page size="A4" style={styles.page}>
-    <View style={styles.pageHeader}>
-      <View>
-        <Text style={styles.categoryTag}>CATEGORY ANALYSIS</Text>
-        <Text style={styles.categoryTitle}>{label}</Text>
-      </View>
-      <View style={styles.scoreChip}>
-        <Text style={[styles.scoreChipNumber, { color: getScoreColor(score) }]}>{score}</Text>
-        <Text style={styles.scoreChipLabel}>SCORE</Text>
-      </View>
-    </View>
+const sectionHeading = (doc, label, dotColor, y) => {
+  fill(doc, dotColor);
+  doc.circle(ML + 1.8, y - 1.5, 1.5, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  text(doc, C.white);
+  doc.text(label, ML + 6, y);
+  return y + 5;
+};
 
-    <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <View style={[styles.sectionDot, { backgroundColor: COLORS.blue }]} />
-        <Text style={styles.sectionTitle}>INSIGHTS</Text>
-      </View>
-      {insights.map((insight, i) => (
-        <View key={i} style={styles.bullet}>
-          <Text style={styles.bulletDash}>–</Text>
-          <Text style={styles.bulletText}>{insight}</Text>
-        </View>
-      ))}
-    </View>
+// ─── Cover page ───────────────────────────────────────────────────────────────
+const drawCover = (doc, { domain, url, overallScore, scores, date, totalPages }) => {
+  bg(doc);
 
-    <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <View style={[styles.sectionDot, { backgroundColor: COLORS.purple }]} />
-        <Text style={styles.sectionTitle}>RECOMMENDATIONS</Text>
-      </View>
-      {recommendations.map((rec, i) => (
-        <View key={i} style={styles.bullet}>
-          <Text style={styles.bulletDash}>–</Text>
-          <Text style={styles.bulletText}>{rec}</Text>
-        </View>
-      ))}
-    </View>
+  // Header
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+  text(doc, C.muted);  doc.text('BRANDCAMP', ML, ML + 4);
+  doc.setFont('helvetica', 'bold');  doc.setFontSize(22);
+  text(doc, C.white);  doc.text('Brand Audit Report', ML, ML + 13);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+  text(doc, C.muted);  doc.text('Website analysis & recommendations', ML, ML + 21);
 
-    <Text style={styles.pageNumber}>{pageNum} / {totalPages}</Text>
-  </Page>
-);
+  // Website
+  let y = ML + 42;
+  doc.setFontSize(8); text(doc, C.muted); doc.text('ANALYSED WEBSITE', ML, y); y += 7;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(24);
+  text(doc, C.white); doc.text(domain, ML, y); y += 7;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+  text(doc, C.muted); doc.text(url, ML, y); y += 10;
 
-const AuditReport = ({ data }) => {
+  divider(doc, y); y += 10;
+
+  // Overall score
+  const sc = Number(overallScore) || 0;
+  fill(doc, C.purple); doc.roundedRect(ML, y, 18, 18, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(14);
+  text(doc, C.white); doc.text(String(sc), ML + 9, y + 11, { align: 'center' });
+
+  text(doc, C.muted); doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+  doc.text('OVERALL SCORE', ML + 22, y + 5);
+  const lbl = sc >= 70 ? 'Strong brand presence' : sc >= 40 ? 'Room for improvement' : 'Needs significant work';
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+  text(doc, C.white); doc.text(lbl, ML + 22, y + 13);
+  y += 26;
+
+  // Category tiles — 2 × 2
+  const tW = (CW - 4) / 2;
+  const tH = 20;
+  CATEGORIES.forEach((cat, i) => {
+    const col = i % 2;
+    const row = Math.floor(i / 2);
+    const tx  = ML + col * (tW + 4);
+    const ty  = y  + row * (tH + 4);
+    const s   = Number(scores[cat.key]) || 0;
+    const col2 = scoreColor(s);
+
+    fill(doc, C.surface); doc.roundedRect(tx, ty, tW, tH, 2, 2, 'F');
+    stroke(doc, C.border); doc.setLineWidth(0.2); doc.roundedRect(tx, ty, tW, tH, 2, 2, 'S');
+
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
+    text(doc, C.muted); doc.text(cat.label, tx + 3, ty + 6);
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(14);
+    text(doc, col2); doc.text(String(s), tx + 3, ty + 15);
+
+    // Score bar
+    const bx = tx + 18; const by = ty + 13; const bw = tW - 22;
+    fill(doc, C.border); doc.roundedRect(bx, by, bw, 2, 0.5, 0.5, 'F');
+    if (s > 0) { fill(doc, col2); doc.roundedRect(bx, by, (bw * s) / 100, 2, 0.5, 0.5, 'F'); }
+  });
+
+  // Footer
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+  text(doc, C.muted);
+  doc.text(`Generated ${date}`, ML, H - 10);
+  doc.text(`1 / ${totalPages}`, W - ML, H - 10, { align: 'right' });
+};
+
+// ─── Category page ────────────────────────────────────────────────────────────
+const drawCategoryPage = (doc, { label, score, insights, recommendations, pageNum, totalPages }) => {
+  bg(doc);
+  const s = Number(score) || 0;
+  const col = scoreColor(s);
+
+  // Header
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+  text(doc, C.purple); doc.text('CATEGORY ANALYSIS', ML, ML + 4);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(18);
+  text(doc, C.white); doc.text(label, ML, ML + 13);
+
+  // Score chip
+  fill(doc, C.surface); doc.roundedRect(W - ML - 20, ML - 2, 20, 17, 2, 2, 'F');
+  stroke(doc, C.border); doc.setLineWidth(0.2); doc.roundedRect(W - ML - 20, ML - 2, 20, 17, 2, 2, 'S');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(14);
+  text(doc, col); doc.text(String(s), W - ML - 10, ML + 7, { align: 'center' });
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7);
+  text(doc, C.muted); doc.text('SCORE', W - ML - 10, ML + 13, { align: 'center' });
+
+  // Divider
+  let y = ML + 20;
+  divider(doc, y); y += 8;
+
+  // Insights
+  y = sectionHeading(doc, 'INSIGHTS', C.blue, y);
+  y = bulletList(doc, insights, y, H - 55);
+
+  y += 4;
+
+  // Recommendations
+  if (y < H - 50) {
+    y = sectionHeading(doc, 'RECOMMENDATIONS', C.purple, y);
+    bulletList(doc, recommendations, y, H - 18);
+  }
+
+  // Footer
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+  text(doc, C.muted);
+  doc.text(`${pageNum} / ${totalPages}`, W - ML, H - 10, { align: 'right' });
+};
+
+// ─── Public API ───────────────────────────────────────────────────────────────
+export const generateAuditPDF = (data) => {
   const {
     url = '',
     overallScore = 0,
@@ -332,77 +197,25 @@ const AuditReport = ({ data }) => {
     timestamp = new Date().toISOString(),
   } = data || {};
 
-  const domain = (() => {
-    try { return new URL(url).hostname.replace('www.', ''); } catch { return url; }
-  })();
-
-  const date = new Date(timestamp).toLocaleDateString('en-GB', {
-    day: 'numeric', month: 'long', year: 'numeric',
-  });
-
+  const domain = (() => { try { return new URL(url).hostname.replace('www.', ''); } catch { return url; } })();
+  const date   = new Date(timestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
   const totalPages = 1 + CATEGORIES.length;
 
-  const topRow = CATEGORIES.slice(0, 2);
-  const bottomRow = CATEGORIES.slice(2, 4);
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
-  const scoreLabel = overallScore >= 70
-    ? 'Strong brand presence'
-    : overallScore >= 40
-    ? 'Room for improvement'
-    : 'Needs significant work';
+  drawCover(doc, { domain, url, overallScore, scores, date, totalPages });
 
-  return (
-    <Document title={`Brand Audit – ${domain}`} author="BrandCamp">
-      {/* Cover page */}
-      <Page size="A4" style={styles.coverPage}>
-        <Text style={styles.brandLabel}>BRANDCAMP</Text>
-        <Text style={styles.appTitle}>Brand Audit Report</Text>
-        <Text style={styles.reportSubtitle}>Website analysis & recommendations</Text>
+  CATEGORIES.forEach((cat, i) => {
+    doc.addPage();
+    drawCategoryPage(doc, {
+      label:           cat.label,
+      score:           scores[cat.key],
+      insights:        Array.isArray(insights[cat.key])        ? insights[cat.key]        : [],
+      recommendations: Array.isArray(recommendations[cat.key]) ? recommendations[cat.key] : [],
+      pageNum:         i + 2,
+      totalPages,
+    });
+  });
 
-        <Text style={styles.websiteLabel}>ANALYSED WEBSITE</Text>
-        <Text style={styles.websiteName}>{domain}</Text>
-        <Text style={styles.websiteUrl}>{url}</Text>
-
-        <View style={styles.divider} />
-
-        <View style={styles.overallScoreRow}>
-          <View style={styles.overallScoreBox}>
-            <Text style={styles.overallScoreNumber}>{overallScore}</Text>
-          </View>
-          <View>
-            <Text style={styles.overallScoreLabel}>OVERALL SCORE</Text>
-            <Text style={styles.overallScoreSubtext}>{scoreLabel}</Text>
-          </View>
-        </View>
-
-        <View style={styles.categoryRow}>
-          <CategoryTile label={topRow[0].label} score={scores[topRow[0].key]} tileStyle={styles.categoryTileLeft} />
-          <CategoryTile label={topRow[1].label} score={scores[topRow[1].key]} tileStyle={styles.categoryTileRight} />
-        </View>
-        <View style={styles.categoryRow}>
-          <CategoryTile label={bottomRow[0].label} score={scores[bottomRow[0].key]} tileStyle={styles.categoryTileLeft} />
-          <CategoryTile label={bottomRow[1].label} score={scores[bottomRow[1].key]} tileStyle={styles.categoryTileRight} />
-        </View>
-
-        <View style={styles.coverFooter}>
-          <Text style={styles.footerText}>Generated {date}</Text>
-          <Text style={styles.footerText}>1 / {totalPages}</Text>
-        </View>
-      </Page>
-
-      {CATEGORIES.map(({ key, label }, i) => (
-        <CategoryPage
-          key={key}
-          label={label}
-          score={Number(scores[key]) || 0}
-          insights={Array.isArray(insights[key]) ? insights[key] : []}
-          recommendations={Array.isArray(recommendations[key]) ? recommendations[key] : []}
-          pageNum={i + 2}
-          totalPages={totalPages}
-        />
-      ))}
-    </Document>
-  );
+  return doc;
 };
-
-export default AuditReport;

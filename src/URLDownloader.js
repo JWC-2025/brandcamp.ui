@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { pdf } from '@react-pdf/renderer';
-import AuditReport from './AuditReport';
+import { generateAuditPDF } from './AuditReport';
 
 const URLDownloader = () => {
   const [url, setUrl] = useState('');
@@ -185,17 +184,11 @@ const URLDownloader = () => {
       if (!response.ok) throw new Error(`Failed to fetch audit result: ${response.status}`);
       const { data: raw } = await response.json();
       const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      const blob = await pdf(<AuditReport data={data} />).toBlob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
+      const doc = generateAuditPDF(data);
       const domain = (() => { try { return new URL(data.url).hostname.replace('www.', ''); } catch { return auditId; } })();
-      link.download = `brandcamp-audit-${domain}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      doc.save(`brandcamp-audit-${domain}.pdf`);
     } catch (err) {
+      console.error('[PDF] generation failed:', err);
       setError(err.message || 'Failed to generate PDF report');
     }
   };
