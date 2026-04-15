@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { pdf } from '@react-pdf/renderer';
+import AuditReport from './AuditReport';
 
 const URLDownloader = () => {
   const [url, setUrl] = useState('');
@@ -174,6 +176,26 @@ const URLDownloader = () => {
       downloadCSV(csvData, filename);
     } catch (err) {
       setError(err.message || 'Failed to download CSV file');
+    }
+  };
+
+  const downloadPDF = async (auditId) => {
+    try {
+      const response = await fetch(`https://brand-camp-api.vercel.app/api/audit/${auditId}/result`);
+      if (!response.ok) throw new Error(`Failed to fetch audit result: ${response.status}`);
+      const { data } = await response.json();
+      const blob = await pdf(<AuditReport data={data} />).toBlob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const domain = (() => { try { return new URL(data.url).hostname.replace('www.', ''); } catch { return auditId; } })();
+      link.download = `brandcamp-audit-${domain}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err.message || 'Failed to generate PDF report');
     }
   };
 
@@ -627,15 +649,23 @@ const URLDownloader = () => {
                             {audit.score || ' N/A' }
                           </td>
                           <td className="px-4 py-3 text-center">
-                            {audit.status === 'completed' && audit.downloadUrl ? (
-                              <button
-                                onClick={() => {
-                                  downloadFromBlobUrl(audit.downloadUrl, `audit-${audit.auditId}.csv`);
-                                }}
-                                className="bg-gradient-to-r from-purple-600/80 to-blue-600/80 hover:from-purple-600 hover:to-blue-600 text-white text-sm font-medium py-2 px-4 rounded-lg transition-all duration-200 hover:scale-[1.02]"
-                              >
-                                Download CSV
-                              </button>
+                            {audit.status === 'completed' ? (
+                              <div className="flex items-center justify-center gap-2">
+                                {audit.downloadUrl && (
+                                  <button
+                                    onClick={() => downloadFromBlobUrl(audit.downloadUrl, `audit-${audit.auditId}.csv`)}
+                                    className="bg-slate-700/80 hover:bg-slate-600 text-white text-sm font-medium py-2 px-3 rounded-lg transition-all duration-200 hover:scale-[1.02]"
+                                  >
+                                    CSV
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => downloadPDF(audit.auditId)}
+                                  className="bg-gradient-to-r from-purple-600/80 to-blue-600/80 hover:from-purple-600 hover:to-blue-600 text-white text-sm font-medium py-2 px-3 rounded-lg transition-all duration-200 hover:scale-[1.02]"
+                                >
+                                  PDF Report
+                                </button>
+                              </div>
                             ) : (
                               <span className="text-slate-500 text-sm">
                                 {audit.status === 'pending' ? 'Pending...' : audit.status === 'processing' ? 'Processing...' : 'Not available'}
