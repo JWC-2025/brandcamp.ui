@@ -250,16 +250,20 @@ const styles = StyleSheet.create({
 });
 
 const getScoreColor = (score) => {
-  if (score >= 70) return COLORS.green;
-  if (score >= 40) return COLORS.amber;
+  const n = Number(score) || 0;
+  if (n >= 70) return COLORS.green;
+  if (n >= 40) return COLORS.amber;
   return COLORS.red;
 };
 
-const ScoreBar = ({ score }) => (
-  <View style={styles.barTrack}>
-    <View style={[styles.barFill, { width: `${score}%`, backgroundColor: getScoreColor(score) }]} />
-  </View>
-);
+const ScoreBar = ({ score }) => {
+  const n = Math.max(0, Math.min(100, Number(score) || 0));
+  return (
+    <View style={styles.barTrack}>
+      <View style={[styles.barFill, { width: `${n}%`, backgroundColor: getScoreColor(n) }]} />
+    </View>
+  );
+};
 
 const CategoryTile = ({ label, score, tileStyle }) => (
   <View style={tileStyle}>
@@ -315,7 +319,14 @@ const CategoryPage = ({ label, score, insights, recommendations, pageNum, totalP
 );
 
 const AuditReport = ({ data }) => {
-  const { url, overallScore, scores, insights, recommendations, timestamp } = data;
+  const {
+    url = '',
+    overallScore = 0,
+    scores = {},
+    insights = {},
+    recommendations = {},
+    timestamp = new Date().toISOString(),
+  } = data || {};
 
   const domain = (() => {
     try { return new URL(url).hostname.replace('www.', ''); } catch { return url; }
@@ -379,9 +390,9 @@ const AuditReport = ({ data }) => {
         <CategoryPage
           key={key}
           label={label}
-          score={scores[key]}
-          insights={insights[key] || []}
-          recommendations={recommendations[key] || []}
+          score={Number(scores[key]) || 0}
+          insights={Array.isArray(insights[key]) ? insights[key] : []}
+          recommendations={Array.isArray(recommendations[key]) ? recommendations[key] : []}
           pageNum={i + 2}
           totalPages={totalPages}
         />

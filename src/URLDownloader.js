@@ -184,6 +184,7 @@ const URLDownloader = () => {
       const response = await fetch(`https://brand-camp-api.vercel.app/api/audit/${auditId}/result`);
       if (!response.ok) throw new Error(`Failed to fetch audit result: ${response.status}`);
       const { data } = await response.json();
+      console.log('[PDF] audit data:', JSON.stringify(data, null, 2));
       const blob = await pdf(<AuditReport data={data} />).toBlob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
